@@ -15,7 +15,7 @@ import (
 
 	"github.com/tomMoulard/fail2ban/files"
 	"github.com/tomMoulard/fail2ban/ipchecking"
-	logger "github.com/tomMoulard/fail2ban/log"
+	//logger "github.com/tomMoulard/fail2ban/log"
 )
 
 func init() {
@@ -35,8 +35,8 @@ type Urlregexp struct {
 	Mode   string `yaml:"mode"`
 }
 
-// LoggerDEBUG debug logger. noop by default.
-var LoggerDEBUG = logger.New(os.Stdout, "DEBUG: Fail2Ban: ", log.Ldate|log.Ltime|log.Lshortfile)
+// log debug logger. noop by default.
+//var log = logger.New(os.Stdout, "DEBUG: Fail2Ban: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 // Rules struct fail2ban config.
 type Rules struct {
@@ -215,18 +215,18 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 // ServeHTTP iterates over every headers to match the ones specified in the
 // configuration and return nothing if regexp failed.
 func (u *Fail2Ban) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	LoggerDEBUG.Printf("New request: %+v", *req)
+	log.Printf("New request: %+v", *req)
 
 	remoteIP, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err != nil {
-		LoggerDEBUG.Printf("failed to split remote address %q: %v", req.RemoteAddr, err)
+		log.Printf("failed to split remote address %q: %v", req.RemoteAddr, err)
 
 		return
 	}
 
 	// Blacklist
 	if u.blacklist.Contains(remoteIP) {
-		LoggerDEBUG.Println(remoteIP + " is blacklisted")
+		log.Println(remoteIP + " is blacklisted")
 		rw.WriteHeader(http.StatusForbidden)
 
 		return
@@ -234,7 +234,7 @@ func (u *Fail2Ban) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// Whitelist
 	if u.whitelist.Contains(remoteIP) {
-		LoggerDEBUG.Println(remoteIP + " is whitelisted")
+		log.Println(remoteIP + " is whitelisted")
 		u.next.ServeHTTP(rw, req)
 
 		return
@@ -262,7 +262,7 @@ func (u *Fail2Ban) shouldAllow(remoteIP, reqURL string) bool {
 		if reg.Match(urlBytes) {
 			u.ipViewed[remoteIP] = IPViewed{time.Now(), ip.nb + 1, true}
 
-			LoggerDEBUG.Printf("Url (%q) was matched by regexpBan: %q for %q", reqURL, reg.String(), remoteIP)
+			log.Printf("Url (%q) was matched by regexpBan: %q for %q", reqURL, reg.String(), remoteIP)
 
 			return false
 		}
@@ -271,7 +271,7 @@ func (u *Fail2Ban) shouldAllow(remoteIP, reqURL string) bool {
 	// Urlregexp allow
 	for _, reg := range u.rules.URLRegexpAllow {
 		if reg.Match(urlBytes) {
-			LoggerDEBUG.Printf("Url (%q) was matched by regexpAllow: %q for %q", reqURL, reg.String(), remoteIP)
+			log.Printf("Url (%q) was matched by regexpAllow: %q for %q", reqURL, reg.String(), remoteIP)
 
 			return true
 		}
@@ -281,7 +281,7 @@ func (u *Fail2Ban) shouldAllow(remoteIP, reqURL string) bool {
 	if !foundIP {
 		u.ipViewed[remoteIP] = IPViewed{time.Now(), 1, false}
 
-		LoggerDEBUG.Printf("welcome %q", remoteIP)
+		log.Printf("welcome %q", remoteIP)
 
 		return true
 	}
@@ -289,7 +289,7 @@ func (u *Fail2Ban) shouldAllow(remoteIP, reqURL string) bool {
 	if ip.blacklisted {
 		if time.Now().Before(ip.viewed.Add(u.rules.Bantime)) {
 			u.ipViewed[remoteIP] = IPViewed{ip.viewed, ip.nb + 1, true}
-			LoggerDEBUG.Printf("%q is still banned since %q, %d request",
+			log.Printf("%q is still banned since %q, %d request",
 				remoteIP, ip.viewed.Format(time.RFC3339), ip.nb+1)
 
 			return false
@@ -297,7 +297,7 @@ func (u *Fail2Ban) shouldAllow(remoteIP, reqURL string) bool {
 
 		u.ipViewed[remoteIP] = IPViewed{time.Now(), 1, false}
 
-		LoggerDEBUG.Println(remoteIP + " is no longer banned")
+		log.Println(remoteIP + " is no longer banned")
 
 		return true
 	}
@@ -306,20 +306,20 @@ func (u *Fail2Ban) shouldAllow(remoteIP, reqURL string) bool {
 		if ip.nb+1 >= u.rules.MaxRetry {
 			u.ipViewed[remoteIP] = IPViewed{time.Now(), ip.nb + 1, true}
 
-			LoggerDEBUG.Println(remoteIP + " is now banned temporarily")
+			log.Println(remoteIP + " is now banned temporarily")
 
 			return false
 		}
 
 		u.ipViewed[remoteIP] = IPViewed{ip.viewed, ip.nb + 1, false}
-		LoggerDEBUG.Printf("welcome back %q for the %d time", remoteIP, ip.nb+1)
+		log.Printf("welcome back %q for the %d time", remoteIP, ip.nb+1)
 
 		return true
 	}
 
 	u.ipViewed[remoteIP] = IPViewed{time.Now(), 1, false}
 
-	LoggerDEBUG.Printf("welcome back %q", remoteIP)
+	log.Printf("welcome back %q", remoteIP)
 
 	return true
 }
