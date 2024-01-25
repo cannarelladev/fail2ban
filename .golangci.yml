@@ -28,7 +28,7 @@ linters-settings:
       main:
         allow:
           - $gostd
-          - github.com/tomMoulard/fail2ban
+          - github.com/cannarelladev/fail2ban
   godox:
     keywords:
       - FIXME
@@ -71,10 +71,10 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-rules:
-    - path: '(.+)_test.go'
+    - path: "(.+)_test.go"
       linters:
         - funlen
-    - path: 'fail2ban.go'
-      text: 'calculated cyclomatic complexity for function shouldAllow is 12'
-    - path: 'fail2ban_test.go' # false-positive
-      text: 'response body must be closed'
+    - path: "fail2ban.go"
+      text: "calculated cyclomatic complexity for function shouldAllow is 12"
+    - path: "fail2ban_test.go" # false-positive
+      text: "response body must be closed"
